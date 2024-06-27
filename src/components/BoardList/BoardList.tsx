@@ -1,9 +1,14 @@
 import React, { FC, useRef, useState } from 'react'
-import { useTypedSelector } from '../../hooks/redux';
-import { FiPlusCircle } from 'react-icons/fi';
+import { useTypedDispatch, useTypedSelector } from '../../hooks/redux';
+import { FiLogIn, FiPlusCircle } from 'react-icons/fi';
 import SideForm from './SideForm/SideForm';
 import { addSection, container, title, addButton, boardItemActive, boardItem } from './BoardList.css';
 import clsx from 'clsx';
+import { GoSignOut } from 'react-icons/go';
+import { GoogleAuthProvider, getAuth, signInWithPopup, signOut } from 'firebase/auth';
+import { app } from '../../firebase';
+import { removeUser, setUser } from '../../store/slices/userSlice';
+import { useAuth } from '../../hooks/useAuth';
 
 type TBoardListProps = {
   activeBoardId: string;
@@ -17,13 +22,47 @@ const BoardList: FC<TBoardListProps> = ({
   setActiveBoardId
 }) => {
 
+  const dispatch = useTypedDispatch();
   const { boardArray } = useTypedSelector(state => state.boards);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  const { isAuth } = useAuth();
+
+  const handleLogin = () => {
+    signInWithPopup(auth, provider)
+    .then(userCrendential => {
+      console.log(userCrendential);
+        dispatch(
+          setUser({
+            email: userCrendential.user.email,
+            id: userCrendential.user.uid
+          })
+        )
+    })
+    .catch(error => {
+      console.error(error);
+    })
+  }
+
   const handleClick = () => {
     setIsFormOpen(!isFormOpen)
     inputRef.current?.focus();
+  }
+
+  const handleSignOut = () => {
+    signOut(auth)
+    .then(() => {
+      dispatch(
+        removeUser()
+      )
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   return (
@@ -38,7 +77,7 @@ const BoardList: FC<TBoardListProps> = ({
             clsx(
               {
                 [boardItemActive]:
-                boardArray.findIndex(board => board.boardId === activeBoardId) === index, 
+                boardArray.findIndex(board => board.boardId === activeBoardId) === index 
               },
               {
                 [boardItem]:
@@ -46,7 +85,7 @@ const BoardList: FC<TBoardListProps> = ({
               }
             )
           }
-          >
+         >
           <div>
             {board.boardName}
           </div>
@@ -60,6 +99,12 @@ const BoardList: FC<TBoardListProps> = ({
           <FiPlusCircle className={addButton}onClick={handleClick}/>
         }
 
+          { isAuth
+          ?
+          <GoSignOut className={addButton} onClick={handleSignOut}/>
+          :
+          <FiLogIn className={addButton} onClick={handleLogin}/>
+          }
       </div>
     </div>
   )

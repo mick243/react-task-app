@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import { FC } from 'react'
 import { GrSubtract } from 'react-icons/gr'
 import Task from '../Task/Task'
 import ActionButton from '../ActionButton/ActionButton'
@@ -9,6 +9,7 @@ import { addLog } from '../../store/slices/loggerSlice'
 import { v4 } from 'uuid'
 import { setModalData } from '../../store/slices/modalSlice'
 import { deleteButton, header, listWrapper, name } from './List.css'
+import { Droppable } from 'react-beautiful-dnd'
 
 type TListProps = {
   boardId: string;
@@ -48,7 +49,11 @@ const List: FC<TListProps> = ({
   }
 
   return (
+    <Droppable droppableId={list.listId}>
+      {provided => (
     <div
+      {...provided.droppableProps}
+      ref={provided.innerRef}
       className={listWrapper}
     >
       <div className={header}>
@@ -65,19 +70,22 @@ const List: FC<TListProps> = ({
           >
               <Task
                 taskName = {task.taskName}
-                taskDecription = {task.taskDescription}
+                taskDescription = {task.taskDescription}
                 boardId = {boardId}
                 id = {task.taskId}
                 index = {index}
               />
             </div>
         ))}
+        {provided.placeholder}
          <ActionButton 
           boardId={boardId}
           listId={list.listId} 
          /> {/*Pops로 분기처리*/}
     </div> 
+    )}
+    </Droppable>
   )
 }
 
-export default List
+export default List;
